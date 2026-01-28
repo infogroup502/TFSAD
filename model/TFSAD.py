@@ -68,7 +68,7 @@ class TFSAD(nn.Module):
 
         x_norm = self.revin_layer(x, 'norm')
 
-        local_concat_results, global_concat_results = process(x_norm, patch_size=self.patch_size)
+        # local_concat_results, global_concat_results = process(x_norm, patch_size=self.patch_size)
         local_concat_results, global_concat_results = process_neighbors(x_norm, patch_size=self.patch_size)
 
         b, patch, p, n = local_concat_results.shape
@@ -174,4 +174,5 @@ class TFSAD(nn.Module):
         global_re_neighbor = self.neighbor_mlp(global_f_d).reshape(self.batch_size,self.win_size,-1)
 
         return local_point, global_point,local_re_neighbor,global_re_neighbor,back_neighbor
+
 
