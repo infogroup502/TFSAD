@@ -12,11 +12,11 @@ class MLP(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(MLP, self).__init__()
 
-        self.fc1 = nn.Linear(input_size, hidden_size)  # 第一个全连接层
-        self.fc2 = nn.Linear(hidden_size, output_size) # 第二个全连接层
+        self.fc1 = nn.Linear(input_size, hidden_size)  
+        self.fc2 = nn.Linear(hidden_size, output_size) 
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))  # 使用ReLU作为激活函数
+        x = torch.relu(self.fc1(x))  
         x = self.fc2(x)
         return x
 
@@ -110,9 +110,9 @@ class TFSAD(nn.Module):
         local_d = torch.cat((local_data,local_t_d),dim=-1) # b,l,2m-m//2+30
         global_d = torch.cat((global_data,global_t_d),dim=-1)
 
-        local_l_m = self.Conv_lm(local_lm.unsqueeze(1)).squeeze(1) # 大卷积核卷积
-        local_l_m_1 = self.Conv_lm_1(local_lm.unsqueeze(1)).squeeze(1) # 1/2大卷积核卷积
-        local_l_m = torch.cat((local_l_m, local_l_m_1), dim=1)  # b,m-m//2+2,l
+        local_l_m = self.Conv_lm(local_lm.unsqueeze(1)).squeeze(1) 
+        local_l_m_1 = self.Conv_lm_1(local_lm.unsqueeze(1)).squeeze(1) 
+        local_l_m = torch.cat((local_l_m, local_l_m_1), dim=1)  
         local_l_m = self.Attn_lm_1(local_l_m) # b,m-m//2+2,l
 
         local_l_n = self.Conv_ln(local_ln.unsqueeze(1)).squeeze(1)
@@ -174,3 +174,4 @@ class TFSAD(nn.Module):
         global_re_neighbor = self.neighbor_mlp(global_f_d).reshape(self.batch_size,self.win_size,-1)
 
         return local_point, global_point,local_re_neighbor,global_re_neighbor,back_neighbor
+
