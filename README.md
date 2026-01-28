@@ -14,3 +14,11 @@ The recommended requirements for LFTSAD are specified as follows:
 - torch==1.13.0
 - tqdm==4.65.0
 - tsfresh==0.20.1
+
+## Usage
+1. Install Python 3.6, PyTorch >= 1.4.0
+2. Download the datasets
+3. To train and evaluate LFTSAD on a dataset, run the following command:
+```bash
+python main.py 
+```
