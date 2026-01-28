@@ -15,6 +15,15 @@ The recommended requirements for LFTSAD are specified as follows:
 - tqdm==4.65.0
 - tsfresh==0.20.1
 
+## Code Description
+There are six files/folders in the source
+- data_factory: The preprocessing folder/file. All datasets preprocessing codes are here.
+- main.py: The main python file. You can adjustment all parameters in there.
+- metrics: There is the evaluation metrics code folder.
+- model: TFSAD model folder
+- solver.py: Another python file. The training, validation, and testing processing are all in there
+
+
 ## Usage
 1. Install Python 3.6, PyTorch >= 1.4.0
 2. Download the datasets
