@@ -6,10 +6,6 @@ from einops import rearrange
 
 
 def process(x,model='double',patch_size=10):
-    B, L, M = x.shape
-    n = L // patch_size
-    x = rearrange(x, 'b l m -> b m l')
-    x = rearrange(x, 'b m (p n) -> (b m) p n', p=patch_size, n=n)
 
     batch_size, rows, cols = x.shape
     device = x.device
@@ -224,3 +220,4 @@ class VariableAttentionConv(nn.Module):
         self = self.to(memory_format=torch.channels_last)
         self.channels_last = True
         return self
+
