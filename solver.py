@@ -1,16 +1,13 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import os
+
 import time
 from utils.utils import *
 from data_factory.dataloader import get_loader_segment
-from model.TFSAD import TFSAD
+from model.TFSAD import TFSAD  # 单个MLP重构
+
 
 from metrics.metrics import *
 import warnings
-import pandas as pd
+
 warnings.filterwarnings('ignore')
 
 def adjust_learning_rate(optimizer, epoch, lr_):
@@ -32,7 +29,6 @@ def adjust_learning_rate(optimizer, epoch, lr_):
         else:
             return focal_loss
 
-
 class Solver(object):
     DEFAULTS = {
     }
@@ -53,16 +49,18 @@ class Solver(object):
                                               win_size=self.win_size, mode='test', dataset=self.dataset)
         self.thre_loader = get_loader_segment(self.index, 'dataset/' + self.data_path, batch_size=self.min_size,
                                               win_size=self.win_size, mode='thre', dataset=self.dataset)
+        data_load_time = time.time() - start_data
+
 
         self.sw_max_mean = self.sw_max_mean
         self.sw_loss = self.sw_loss
         self.num_epochs = self.num_epochs
         self.batch = self.batch_size
-        self.ratio = self.ratio
+        self.ratio = self.p_seq
+
         self.build_model()
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.init_time = time.time() - start_init
 
         if self.loss_fuc == 'MAE':
             self.criterion = nn.L1Loss()
@@ -83,16 +81,22 @@ class Solver(object):
 
 
     def train(self):
-        print("train_loader：", len(self.train_loader))
-        print("Start training")
+        print("Start training...")
+        total_train_loss = 0.0
+
+        all_batch_losses = []
+
         for epoch in range(self.num_epochs):
-            epoch_time = time.time()
+            iter_count = 0
             self.model.train()
+            epoch_loss_sum = 0.0
+
             for batch_idx, (data, labels) in enumerate(self.train_loader):
 
                 self.optimizer.zero_grad()
-                input = data.float().to(self.device)
-                local_point,global_point,local_re_neighbor,global_re_neighbor,local_neighbor = self.model(input)
+                iter_count += 1
+                input = data.float().to(self.device) #(b,l,m)
+                local_point,global_point,local_re_neighbor,global_re_neighbor,local_neighbor= self.model(input)
                 loss1 =  (
                      self.criterion(local_point, global_point)
                    + self.criterion(local_point, input)
@@ -109,17 +113,17 @@ class Solver(object):
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
-            print(
-                "Epoch: {0}, Cost time: {1:.3f}s ".format(
-                    epoch + 1, time.time() - epoch_time))
             adjust_learning_rate(self.optimizer, epoch + 1, self.lr)
 
     def test(self):
+        print("train_loader: ", len(self.train_loader))  # 应 > 0
+        print("thre_loader: ", len(self.thre_loader))  # 应 > 0
+
         attens_energy = []
         for batch_idx, (data, labels) in enumerate(self.train_loader):
             input = data.float().to(self.device)
 
-            local_point, global_point, local_re_neighbor, global_re_neighbor,local_neighbor= self.model(input)
+            local_point, global_point, local_re_neighbor, global_re_neighbor,local_neighbor = self.model(input)
             loss1 = 0
             loss2 = 0
             loss1 += (
@@ -132,7 +136,7 @@ class Solver(object):
                       + self.criterion_keep(global_re_neighbor, local_neighbor)
                       )
             if (self.sw_max_mean == 0):
-                loss1 = torch.mean(loss1, dim=-1)
+                loss1 = torch.mean(loss1, dim=-1) # torch.Size([64])
                 loss2 = torch.mean(loss2, dim=-1)
                 loss = self.ratio * loss1 + (1-self.ratio) * loss2
             else:
@@ -140,9 +144,9 @@ class Solver(object):
 
             metric = torch.softmax(loss, dim=-1)
 
-            cri = metric.detach().cpu().numpy() #
+            cri = metric.detach().cpu().numpy() # 长度为64的一维数组
             attens_energy.append(cri)
-        print("attens_energy_train:", len(attens_energy))
+
         attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
         train_energy = np.array(attens_energy)
 
@@ -151,7 +155,8 @@ class Solver(object):
 
         for batch_idx, (data, labels) in enumerate(self.thre_loader):
             input = data.float().to(self.device)
-            local_point, global_point, local_re_neighbor, global_re_neighbor,local_neighbor= self.model(input)
+
+            local_point, global_point, local_re_neighbor, global_re_neighbor,local_neighbor = self.model(input)
             test_labels.append(labels)
 
             loss1 = 0
@@ -166,8 +171,9 @@ class Solver(object):
                     + self.criterion_keep(local_re_neighbor, local_neighbor)
                     + self.criterion_keep(global_re_neighbor, local_neighbor)
             )
+
             if (self.sw_max_mean == 0):
-                loss1 = torch.mean(loss1, dim=-1)
+                loss1 = torch.mean(loss1, dim=-1)  # torch.Size([64])
                 loss2 = torch.mean(loss2, dim=-1)
                 loss = self.ratio * loss1 + (1-self.ratio) * loss2
             else:
@@ -185,6 +191,7 @@ class Solver(object):
         print("dataset:",self.data_path)
         print("anormly_ratio:", self.anormly_ratio)
         print("Threshold:", thresh)
+        print("ratio:",self.ratio)
 
         test_labels = np.concatenate(test_labels, axis=0).reshape(-1)
         test_energy = np.array(attens_energy)
@@ -194,11 +201,11 @@ class Solver(object):
 
         matrix = [self.index]
 
-        scores_simple = combine_all_evaluation_scores(pred, gt, test_energy)
-        for key, value in scores_simple.items():
-            matrix.append(value)
-            print('{0:21} : {1:0.4f}'.format(key, value))
-        # 后处理优化
+        # scores_simple = combine_all_evaluation_scores(pred, gt, test_energy)
+        # for key, value in scores_simple.items():
+        #     matrix.append(value)
+        #     print('{0:21} : {1:0.4f}'.format(key, value))
+
         anomaly_state = False
         for i in range(len(gt)):
             if gt[i] == 1 and pred[i] == 1 and not anomaly_state:
@@ -232,9 +239,3 @@ class Solver(object):
         print(
             "Accuracy : {:0.4f}, Precision : {:0.4f}, Recall : {:0.4f}, F-score : {:0.4f} ".format(accuracy, precision,
                                                                                                    recall, f_score))
-        results_df = pd.DataFrame({
-            'Timestamp': np.arange(len(gt)),  # 如果有实际的时间戳数据，替换为实际的时间戳
-            'Actual_Label': gt,
-            'Predicted_Label': pred,
-            'Energy_Score': test_energy
-        })
