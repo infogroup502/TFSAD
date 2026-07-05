@@ -1,0 +1,39 @@
+================ Hyperparameters ===============
+anormly_ratio: 0.87
+batch_size: 64
+data_path: SMAP
+dataset: SMAP
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 25
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.3
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 179278
+dataset: SMAP
+Start training...
+SMAP
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.87
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  105
+thre_loader:  66
+attens_energy_test:  66
+dataset: SMAP
+anormly_ratio: 0.87
+Threshold: 0.1583727
+ratio: 0.3
+Accuracy : 0.9913, Precision : 0.9519, Recall : 0.9824, F-score : 0.9669 
+
+

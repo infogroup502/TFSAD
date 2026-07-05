@@ -1,0 +1,43 @@
+================ Hyperparameters ===============
+anormly_ratio: 0.49
+batch_size: 64
+data_path: SMD
+dataset: SMD
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 38
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.3
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 306228
+dataset: SMD
+Start training...
+SMD
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.49
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  368
+thre_loader:  110
+attens_energy_test:  110
+dataset: SMD
+anormly_ratio: 0.49
+Threshold: 0.08743845641836573
+ratio: 0.3
+Accuracy : 0.9919, Precision : 0.8847, Recall : 0.9265, F-score : 0.9052 
+
+
+====================================
+Average CPU Usage: 15.7%
+Average Memory Usage: 30.1%
+Average GPU Usage: 80.5%

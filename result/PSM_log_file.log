@@ -1,0 +1,43 @@
+================ Hyperparameters ===============
+anormly_ratio: 1.7
+batch_size: 64
+data_path: PSM
+dataset: PSM
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 25
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.6
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 179278
+dataset: PSM
+Start training...
+PSM
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 1.7
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  103
+thre_loader:  13
+attens_energy_test:  13
+dataset: PSM
+anormly_ratio: 1.7
+Threshold: 0.030496791
+ratio: 0.6
+Accuracy : 0.9892, Precision : 0.9635, Recall : 0.9953, F-score : 0.9791 
+
+
+====================================
+Average CPU Usage: 17.2%
+Average Memory Usage: 68.8%
+Average GPU Usage: 18.4%

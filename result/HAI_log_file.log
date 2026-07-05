@@ -1,0 +1,43 @@
+================ Hyperparameters ===============
+anormly_ratio: 0.58
+batch_size: 64
+data_path: HAI
+dataset: HAI
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 13
+input: 86
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.2
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 1136472
+dataset: HAI
+Start training...
+HAI
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.58
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  219
+thre_loader:  8
+attens_energy_test:  8
+dataset: HAI
+anormly_ratio: 0.58
+Threshold: 0.037238417920470224
+ratio: 0.2
+Accuracy : 0.9950, Precision : 0.9215, Recall : 1.0000, F-score : 0.9591 
+
+
+====================================
+Average CPU Usage: 10.7%
+Average Memory Usage: 26.7%
+Average GPU Usage: 42.7%

@@ -1,0 +1,172 @@
+================ Hyperparameters ===============
+anormly_ratio: 0.45
+batch_size: 64
+data_path: SWAT
+dataset: SWAT
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 51
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.1
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 474948
+dataset: SWAT
+Start training...
+SWAT
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.45
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  386
+thre_loader:  70
+attens_energy_test:  70
+dataset: SWAT
+anormly_ratio: 0.45
+Threshold: 0.08967735
+ratio: 0.1
+Accuracy : 0.9948, Precision : 0.9669, Recall : 0.9909, F-score : 0.9788 
+
+
+====================================
+Average CPU Usage: 21.7%
+Average Memory Usage: 83.1%
+Average GPU Usage: 48.4%
+================ Hyperparameters ===============
+anormly_ratio: 0.5
+batch_size: 64
+data_path: SWAT
+dataset: SWAT
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 51
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.1
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 474948
+dataset: SWAT
+Start training...
+SWAT
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.5
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  386
+thre_loader:  70
+attens_energy_test:  70
+dataset: SWAT
+anormly_ratio: 0.5
+Threshold: 0.08589059
+ratio: 0.1
+Accuracy : 0.9948, Precision : 0.9631, Recall : 0.9959, F-score : 0.9792 
+
+
+====================================
+Average CPU Usage: 16.1%
+Average Memory Usage: 82.8%
+Average GPU Usage: 59.4%
+================ Hyperparameters ===============
+anormly_ratio: 0.48
+batch_size: 64
+data_path: SWAT
+dataset: SWAT
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 51
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.1
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 474948
+dataset: SWAT
+Start training...
+SWAT
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.48
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  386
+thre_loader:  70
+attens_energy_test:  70
+dataset: SWAT
+anormly_ratio: 0.48
+Threshold: 0.087532125
+ratio: 0.1
+Accuracy : 0.9951, Precision : 0.9648, Recall : 0.9959, F-score : 0.9801 
+
+
+====================================
+Average CPU Usage: 16.6%
+Average Memory Usage: 83.4%
+Average GPU Usage: 59.1%
+================ Hyperparameters ===============
+anormly_ratio: 0.46
+batch_size: 64
+data_path: SWAT
+dataset: SWAT
+device_ids: [0, 1, 2]
+devices: 0,1,2
+gpu: 0
+index: 137
+input: 51
+loss_fuc: MSE
+lr: 0.0001
+min_size: 64
+num_epochs: 1
+p_seq: 0.1
+patch_size: 10
+sw_loss: 0
+sw_max_mean: 0
+use_gpu: True
+use_multi_gpu: True
+win_size: 100
+device: cuda:0
+Parameters: 474948
+dataset: SWAT
+Start training...
+SWAT
+ win_size: 100,  patch_size: 10,batch_size: 64
+ num_epochs: 1, anormly_ratio: 0.46
+ sw_max_mean: 0, sw_loss: 0
+train_loader:  386
+thre_loader:  70
+attens_energy_test:  70
+dataset: SWAT
+anormly_ratio: 0.46
+Threshold: 0.08899655
+ratio: 0.1
+Accuracy : 0.9953, Precision : 0.9662, Recall : 0.9959, F-score : 0.9809 
+
+
+====================================
+Average CPU Usage: 16.1%
+Average Memory Usage: 83.3%
+Average GPU Usage: 59.2%
