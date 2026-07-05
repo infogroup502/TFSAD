@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-
 from model.feature_conv import *
 from model.RevIN import RevIN
 from model.utils import *
@@ -12,11 +11,11 @@ class MLP(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(MLP, self).__init__()
 
-        self.fc1 = nn.Linear(input_size, hidden_size)  
-        self.fc2 = nn.Linear(hidden_size, output_size) 
+        self.fc1 = nn.Linear(input_size, hidden_size)  # 第一个全连接层
+        self.fc2 = nn.Linear(hidden_size, output_size) # 第二个全连接层
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))  
+        x = torch.relu(self.fc1(x))  # 使用ReLU作为激活函数
         x = self.fc2(x)
         return x
 
@@ -53,51 +52,61 @@ class TFSAD(nn.Module):
         self.point_mlp = None
         self.neighbor_mlp = None
 
-        self.Conv_lm = Conv(kernel_size=(self.channel,1))
-        self.Conv_lm_1 = Conv(kernel_size=(self.channel//2,1))
-        self.Convln = Conv(kernel_size=(self.patch_size,1))
-        self.Conv_1 = Conv(kernel_size=(self.patch_size//2,1))
-        self.Conv_lp = Conv(kernel_size=(self.p_size,1))
-        self.Conv_lp_1 = Conv(kernel_size=(self.p_size//2,1))
-        self.Conv_d = Conv(kernel_size=(self.m_n_p,1))
-        self.Conv_d_1 = Conv(kernel_size=(self.m_n_p//2+4,1))
+        self.tcn_2d_lm = TemporalConvNet_2D(kernel_size=(self.channel,1))
+        self.tcn_2d_lm_1 = TemporalConvNet_2D(kernel_size=(self.channel//2,1))
+        self.tcn_2d_ln = TemporalConvNet_2D(kernel_size=(self.patch_size,1))
+        self.tcn_2d_ln_1 = TemporalConvNet_2D(kernel_size=(self.patch_size//2,1))
+        self.tcn_2d_lp = TemporalConvNet_2D(kernel_size=(self.p_size,1))
+        self.tcn_2d_lp_1 = TemporalConvNet_2D(kernel_size=(self.p_size//2,1))
+        self.tcn_2d_d = TemporalConvNet_2D(kernel_size=(self.m_n_p,1))
+        self.tcn_2d_d_1 = TemporalConvNet_2D(kernel_size=(self.m_n_p//2+4,1))
 
     def forward(self, x):
+
         B, L, M = x.shape
         self.to(x.device)
 
         x_norm = self.revin_layer(x, 'norm')
 
-        # local_concat_results, global_concat_results = process(x_norm, patch_size=self.patch_size)
-        local_concat_results, global_concat_results = process_neighbors(x_norm, patch_size=self.patch_size)
+        patchsize = self.patch_size
+        n = L // patchsize
+
+        x_norm = rearrange(x_norm, 'b l m -> b m l')
+        x_norm_patch = rearrange(x_norm, 'b m (p n) -> (b m) p n', p=patchsize, n=n)
+
+        local_concat_results, global_concat_results = progress(x_norm_patch, model='double')
+        # local_concat_results, global_concat_results = process_neighbors(x_norm, self.patch_size)
 
         b, patch, p, n = local_concat_results.shape
         local_neighbor = local_concat_results.reshape(b, patch * p, n)
-        l_l_p = process(local_neighbor, model='l')
+        l_l_p = progress(local_neighbor, model='l')
         local_neighbor = local_neighbor.reshape(self.batch_size,self.channel, self.win_size, n)
         back_neighbor = local_neighbor.reshape(self.batch_size, self.win_size, self.patch_size * self.channel)
 
         b, patch, p, n = global_concat_results.shape
         global_neighbor = global_concat_results.reshape(b, patch * p, n)  # (b*m,l,n)
-        g_l_p = process(global_neighbor, model='l')
+        g_l_p = progress(global_neighbor, model='l')
+
 
         local_f = FFT(l_l_p, dim=-1).reshape(self.batch_size, self.channel, self.win_size, self.patch_size,-1)
         global_f = FFT(g_l_p, dim=-1).reshape(self.batch_size, self.channel, self.win_size, self.patch_size,-1)
 
-        local_lm, local_ln, local_lp = decomposition(local_f.permute(0, 2, 1, 3, 4))  # a:m,l; b:n,l; c:p,l
-        global_lm, global_ln, global_lp = decomposition(global_f.permute(0, 2, 1, 3, 4))
+
+        local_lm, local_ln, local_lp = tucker_bl_projections(local_f.permute(0, 2, 1, 3, 4))  # a:m,l; b:n,l; c:p,l
+        global_lm, global_ln, global_lp = tucker_bl_projections(global_f.permute(0, 2, 1, 3, 4))
+
 
 
         local_d = torch.cat((local_lm,local_ln,local_lp),dim=1) # b,m+n+p,l
         global_d = torch.cat((global_lm,global_ln,global_lp),dim=1)
-        # 特征维度
-        local_d_0 = self.Conv_d(local_d.unsqueeze(1)).squeeze(1) # b,1,l
-        local_d_1 = self.Conv_d_1(local_d.unsqueeze(1)).squeeze(1) # b,m-m//2+13,l
+
+        local_d_0 = self.tcn_2d_d(local_d.unsqueeze(1)).squeeze(1) # b,1,l
+        local_d_1 = self.tcn_2d_d_1(local_d.unsqueeze(1)).squeeze(1) # b,m-m//2+13,l
         local_data = torch.cat((local_d_0,local_d_1),dim=1).permute(0,2,1) # b,m-m//2+14,l ->b,l, ,
-        # print(local_data.shape)
+
         local_data = self.Attn_d_1(local_data)
-        global_d_0 = self.Conv_d(global_d.unsqueeze(1)).squeeze(1)
-        global_d_1 = self.Conv_d_1(global_d.unsqueeze(1)).squeeze(1)
+        global_d_0 = self.tcn_2d_d(global_d.unsqueeze(1)).squeeze(1)
+        global_d_1 = self.tcn_2d_d_1(global_d.unsqueeze(1)).squeeze(1)
         global_data = torch.cat((global_d_0,global_d_1),dim=1).permute(0,2,1)
         global_data = self.Attn_d_1(global_data)
         # 时间维度
@@ -110,34 +119,34 @@ class TFSAD(nn.Module):
         local_d = torch.cat((local_data,local_t_d),dim=-1) # b,l,2m-m//2+30
         global_d = torch.cat((global_data,global_t_d),dim=-1)
 
-        local_l_m = self.Conv_lm(local_lm.unsqueeze(1)).squeeze(1) 
-        local_l_m_1 = self.Conv_lm_1(local_lm.unsqueeze(1)).squeeze(1) 
-        local_l_m = torch.cat((local_l_m, local_l_m_1), dim=1)  
+        local_l_m = self.tcn_2d_lm(local_lm.unsqueeze(1)).squeeze(1) # 大卷积核卷积
+        local_l_m_1 = self.tcn_2d_lm_1(local_lm.unsqueeze(1)).squeeze(1) # 1/2大卷积核卷积
+        local_l_m = torch.cat((local_l_m, local_l_m_1), dim=1)  # b,m-m//2+2,l
         local_l_m = self.Attn_lm_1(local_l_m) # b,m-m//2+2,l
 
-        local_l_n = self.Conv_ln(local_ln.unsqueeze(1)).squeeze(1)
-        local_l_n_1 = self.Conv_ln_1(local_ln.unsqueeze(1)).squeeze(1) # b,n,l -> b,6,l
+        local_l_n = self.tcn_2d_ln(local_ln.unsqueeze(1)).squeeze(1)
+        local_l_n_1 = self.tcn_2d_ln_1(local_ln.unsqueeze(1)).squeeze(1) # b,n,l -> b,6,l
         local_l_n = torch.cat((local_l_n, local_l_n_1), dim=1) # b,7,l
         local_l_n = self.Attn_ln_1(local_l_n)
 
-        local_l_p = self.Conv_lp(local_lp.unsqueeze(1)).squeeze(1)
-        local_l_p_1 = self.Conv_lp_1(local_lp.unsqueeze(1)).squeeze(1)
+        local_l_p = self.tcn_2d_lp(local_lp.unsqueeze(1)).squeeze(1)
+        local_l_p_1 = self.tcn_2d_lp_1(local_lp.unsqueeze(1)).squeeze(1)
         local_l_p = torch.cat((local_l_p, local_l_p_1), dim=1) # b,5,l
         local_l_p = self.Attn_lp_1(local_l_p)
 
         # global
-        global_l_m = self.Conv_lm(global_lm.unsqueeze(1)).squeeze(1)
-        global_l_m_1 = self.Conv_lm_1(global_lm.unsqueeze(1)).squeeze(1)
+        global_l_m = self.tcn_2d_lm(global_lm.unsqueeze(1)).squeeze(1)
+        global_l_m_1 = self.tcn_2d_lm_1(global_lm.unsqueeze(1)).squeeze(1)
         global_l_m = torch.cat((global_l_m, global_l_m_1), dim=1)
         global_l_m = self.Attn_lm_1(global_l_m)
 
-        global_l_n = self.Conv_ln(global_ln.unsqueeze(1)).squeeze(1)
-        global_l_n_1 = self.Conv_ln_1(global_ln.unsqueeze(1)).squeeze(1)
+        global_l_n = self.tcn_2d_ln(global_ln.unsqueeze(1)).squeeze(1)
+        global_l_n_1 = self.tcn_2d_ln_1(global_ln.unsqueeze(1)).squeeze(1)
         global_l_n = torch.cat((global_l_n, global_l_n_1), dim=1)
         global_l_n = self.Attn_ln_1(global_l_n)
 
-        global_l_p = self.Conv_lp(global_lp.unsqueeze(1)).squeeze(1)
-        global_l_p_1 = self.Conv_lp_1(global_lp.unsqueeze(1)).squeeze(1)
+        global_l_p = self.tcn_2d_lp(global_lp.unsqueeze(1)).squeeze(1)
+        global_l_p_1 = self.tcn_2d_lp_1(global_lp.unsqueeze(1)).squeeze(1)
         global_l_p = torch.cat((global_l_p, global_l_p_1), dim=1)
         global_l_p = self.Attn_lp_1(global_l_p)
 
@@ -161,6 +170,7 @@ class TFSAD(nn.Module):
         local_f_d = torch.cat((local_f,local_d),dim=-1).reshape(self.batch_size*self.win_size,-1)
         global_f_d = torch.cat((global_f,global_d),dim=-1).reshape(self.batch_size*self.win_size,-1)
 
+
         if self.point_mlp is None:
             local_input_size = local_f_d.shape[-1]
             global_input_size = global_f_d.shape[-1]
@@ -173,6 +183,6 @@ class TFSAD(nn.Module):
         local_re_neighbor = self.neighbor_mlp(local_f_d).reshape(self.batch_size,self.win_size,-1)
         global_re_neighbor = self.neighbor_mlp(global_f_d).reshape(self.batch_size,self.win_size,-1)
 
+
+
         return local_point, global_point,local_re_neighbor,global_re_neighbor,back_neighbor
-
-
