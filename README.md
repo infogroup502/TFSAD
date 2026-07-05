@@ -16,7 +16,7 @@ The recommended requirements for LFTSAD are specified as follows:
 - tsfresh==0.20.1
 
 ## Code Description
-There are six files/folders in the source
+There are five files/folders in the source
 - data_factory: The preprocessing folder/file. All datasets preprocessing codes are here.
 - main.py: The main python file. You can adjustment all parameters in there.
 - metrics: There is the evaluation metrics code folder.
